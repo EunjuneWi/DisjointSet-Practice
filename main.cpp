@@ -21,14 +21,14 @@ struct DisjointSetsElement {
 
 struct DisjointSets {
 	int numberOfTables;
-	int max_table_size;
+	int maxTableSize;
 	vector <DisjointSetsElement> eachTable;
 
 	// Constructor of tables
 	//		Gets number of tables as input
 	//		Set each table to have itself as parent
 	//		and have 0 row (row size will be set later)
-	DisjointSets(int newNumberOfTables) : numberOfTables(newNumberOfTables), max_table_size(0), eachTable(0) 
+	DisjointSets(int newNumberOfTables) : numberOfTables(newNumberOfTables), maxTableSize(0), eachTable(newNumberOfTables)
 	{
 		int tableIndex = 0;
 		for (tableIndex = 0; tableIndex < newNumberOfTables; tableIndex++)
@@ -37,17 +37,80 @@ struct DisjointSets {
 		}
 	}
 
-	int findData(int table) {
-		// find parent and compress path
+	// +++++ TODO +++++
+	// find parent and compress path
+	int findData(int tableIndex) 
+	{
+		//		Traverse edge until it reaches root
+		//		Root's parent is itself
+		int nodeIndex = tableIndex;
+
+		while (eachTable.at(nodeIndex).parent != nodeIndex)
+		{
+			// While it is traversing, if its parent is not root
+			// Change it to the root.
+			eachTable.at(nodeIndex).parent = findData(eachTable.at(nodeIndex).parent);
+			nodeIndex = eachTable.at(nodeIndex).parent;
+		}
+
+		return nodeIndex;
 	}
 
-	void mergeTables(int table1, int table2) {
-		int data1 = findData(table1);
-		int data2 = findData(table2);
-		if (data1 != data1) {
-			// merge two components
-			// use union by rank heuristic
-			// update max_table_size
+	// +++++ TODO +++++
+	// merge two components
+	// use union by rank heuristic
+	// update max_table_size
+	void mergeTables(int tableIndex1, int tableIndex2) 
+	{
+		int dataIndex1 = findData(tableIndex1);
+		int dataIndex2 = findData(tableIndex2);
+
+		// If tables are not merged (when they don't have same root in the tree)
+		// Merge
+		if (dataIndex1 != dataIndex2) 
+		{
+			// Find where to merge
+			int rank1 = eachTable.at(dataIndex1).rank;
+			int rank2 = eachTable.at(dataIndex2).rank;
+
+			// When table2 goes under table1
+			if (rank1 > rank2)
+			{
+				// Change parent of table2 to table1
+				eachTable.at(dataIndex2).parent = dataIndex1;
+
+				// Change rows
+				eachTable.at(dataIndex1).numberOfRows += eachTable.at(dataIndex2).numberOfRows;
+				eachTable.at(dataIndex2).numberOfRows = 0;
+
+				// Change maximum table size
+				if (eachTable.at(dataIndex1).numberOfRows > this->maxTableSize)
+				{
+					this->maxTableSize = eachTable.at(dataIndex1).numberOfRows;
+				}
+			}
+			else
+			{
+				// Change parent of table1 to table2
+				eachTable.at(dataIndex1).parent = dataIndex2;
+				
+				// Change rank if both table has same rank
+				if (rank1 == rank2)
+				{
+					++(eachTable.at(dataIndex2).rank);
+				}
+
+				// Change rows
+				eachTable.at(dataIndex2).numberOfRows += eachTable.at(dataIndex1).numberOfRows;
+				eachTable.at(dataIndex1).numberOfRows = 0;
+
+				// Change maximum table size
+				if (eachTable.at(dataIndex2).numberOfRows > this->maxTableSize)
+				{
+					this->maxTableSize = eachTable.at(dataIndex2).numberOfRows;
+				}
+				
+			}
 		}
 	}
 };
@@ -64,7 +127,7 @@ int main()
 	for (auto &table : tables.eachTable) 
 	{
 		cin >> table.numberOfRows;
-		tables.max_table_size = max(tables.max_table_size, table.numberOfRows);
+		tables.maxTableSize = max(tables.maxTableSize, table.numberOfRows);
 	}
 
 	// Get merge queries and merge
@@ -76,7 +139,7 @@ int main()
 		--table2;
 	
 		tables.mergeTables(table1, table2);
-		cout << tables.max_table_size << endl;
+		cout << tables.maxTableSize << endl;
 	}
 
 	return 0;
